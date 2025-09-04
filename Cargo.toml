@@ -1,0 +1,35 @@
+[workspace]
+members = [
+    "shared",
+    "rest-service", 
+    "grpc-service",
+    "capnp-service",
+    "benchmarks"
+]
+
+[workspace.dependencies]
+# Shared dependencies
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# REST/HTTP
+axum = "0.7"
+tower = "0.4"
+
+# gRPC
+tonic = "0.10"
+tonic-build = "0.10"
+prost = "0.12"
+prost-types = "0.12"
+
+# Cap'n Proto  
+capnp = "0.18"
+capnp-rpc = "0.18"
+capnpc = "0.18"
+
+# Benchmarking
+criterion = "0.5"
