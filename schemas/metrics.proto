@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package protobench.metrics;
+
+// MetricPoint represents a single system metrics data point
+message MetricPoint {
+  int64 timestamp = 1;
+  string hostname = 2;
+  float cpu_percent = 3;
+  uint64 memory_bytes = 4;
+  uint32 disk_io_ops = 5;
+  map<string, string> tags = 6;
+}
+
+// Query parameters for retrieving metrics
+message MetricQuery {
+  int64 start_time = 1;
+  int64 end_time = 2;
+  optional string hostname_filter = 3;
+}
+
+// Aggregated statistics for a set of metrics
+message MetricStatistics {
+  uint64 count = 1;
+  float avg_cpu_percent = 2;
+  uint64 avg_memory_bytes = 3;
+  float avg_disk_io_ops = 4;
+  int64 time_range_seconds = 5;
+}
+
+// Empty response for successful operations
+message Empty {}
+
+// Metrics collection service definition
+service MetricsService {
+  rpc SubmitMetric(MetricPoint) returns (Empty);
+  rpc QueryMetrics(MetricQuery) returns (stream MetricPoint);
+  rpc GetStatistics(MetricQuery) returns (MetricStatistics);
+}

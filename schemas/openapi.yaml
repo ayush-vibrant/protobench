@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: ProtoBench Metrics API
+  description: REST API for metrics collection and querying
+  version: 0.1.0
+
+paths:
+  /metrics:
+    post:
+      summary: Submit a metric data point
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetricPoint'
+      responses:
+        '201':
+          description: Metric submitted successfully
+        '400':
+          description: Invalid metric data
+
+    get:
+      summary: Query metrics by time range
+      parameters:
+        - name: start_time
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: end_time
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: hostname_filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetricPoint'
+
+  /statistics:
+    get:
+      summary: Get aggregated statistics
+      parameters:
+        - name: start_time
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: end_time
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: hostname_filter
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statistics calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricStatistics'
+
+components:
+  schemas:
+    MetricPoint:
+      type: object
+      required:
+        - timestamp
+        - hostname
+        - cpu_percent
+        - memory_bytes
+        - disk_io_ops
+        - tags
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+        hostname:
+          type: string
+        cpu_percent:
+          type: number
+          format: float
+        memory_bytes:
+          type: integer
+          format: int64
+        disk_io_ops:
+          type: integer
+          format: int32
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+
+    MetricStatistics:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
+        avg_cpu_percent:
+          type: number
+          format: float
+        avg_memory_bytes:
+          type: integer
+          format: int64
+        avg_disk_io_ops:
+          type: number
+          format: float
+        time_range_seconds:
+          type: integer
+          format: int64
