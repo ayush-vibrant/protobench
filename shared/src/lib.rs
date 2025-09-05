@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::future::Future;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -31,9 +32,9 @@ pub struct MetricStatistics {
 pub trait MetricsService {
     type Error;
     
-    async fn submit_metric(&self, metric: MetricPoint) -> Result<(), Self::Error>;
-    async fn query_metrics(&self, query: MetricQuery) -> Result<Vec<MetricPoint>, Self::Error>;
-    async fn get_statistics(&self, query: MetricQuery) -> Result<MetricStatistics, Self::Error>;
+    fn submit_metric(&self, metric: MetricPoint) -> impl Future<Output = Result<(), Self::Error>> + Send;
+    fn query_metrics(&self, query: MetricQuery) -> impl Future<Output = Result<Vec<MetricPoint>, Self::Error>> + Send;
+    fn get_statistics(&self, query: MetricQuery) -> impl Future<Output = Result<MetricStatistics, Self::Error>> + Send;
 }
 
 
@@ -41,11 +42,17 @@ pub struct InMemoryStorage {
     metrics: Arc<RwLock<Vec<MetricPoint>>>,
 }
 
-impl InMemoryStorage {
-    pub fn new() -> Self {
+impl Default for InMemoryStorage {
+    fn default() -> Self {
         Self {
             metrics: Arc::new(RwLock::new(Vec::new())),
         }
+    }
+}
+
+impl InMemoryStorage {
+    pub fn new() -> Self {
+        Self::default()
     }
     
     pub fn store_metric(&self, metric: MetricPoint) -> Result<(), anyhow::Error> {
@@ -64,7 +71,7 @@ impl InMemoryStorage {
             })
             .filter(|metric| {
                 query.hostname_filter.as_ref()
-                    .map_or(true, |filter| &metric.hostname == filter)
+                    .is_none_or(|filter| &metric.hostname == filter)
             })
             .cloned()
             .collect();
