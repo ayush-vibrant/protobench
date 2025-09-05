@@ -1,0 +1,35 @@
+[package]
+name = "benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+criterion = { workspace = true }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
+# gRPC client
+tonic = { workspace = true }
+prost = { workspace = true }
+
+# Cap'n Proto client  
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+tokio-util = { version = "0.7", features = ["compat"] }
+futures-util = "0.3"
+
+# Additional utilities
+rand = "0.8"
+
+# Local dependencies
+shared = { path = "../shared" }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+capnpc = { workspace = true }
