@@ -1,8 +1,8 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
-  title: ProtoBench Metrics API
-  description: REST API for metrics collection and querying
-  version: 0.1.0
+  title: "ProtoBench Metrics API"
+  description: "REST API for metrics collection and querying"
+  version: "0.1.0"
 
 paths:
   /metrics:
@@ -19,6 +19,16 @@ paths:
           description: Metric submitted successfully
         '400':
           description: Invalid metric data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     get:
       summary: Query metrics by time range
@@ -49,6 +59,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MetricPoint'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /statistics:
     get:
@@ -78,6 +100,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetricStatistics'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -94,17 +128,26 @@ components:
         timestamp:
           type: integer
           format: int64
+          description: Unix timestamp in seconds
+          minimum: 0
         hostname:
           type: string
+          minLength: 1
+          maxLength: 255
+          description: Server hostname or identifier
         cpu_percent:
           type: number
           format: float
+          minimum: 0.0
+          maximum: 100.0
         memory_bytes:
           type: integer
           format: int64
+          minimum: 0
         disk_io_ops:
           type: integer
           format: int32
+          minimum: 0
         tags:
           type: object
           additionalProperties:
@@ -112,19 +155,43 @@ components:
 
     MetricStatistics:
       type: object
+      required:
+        - count
+        - avg_cpu_percent
+        - avg_memory_bytes
+        - avg_disk_io_ops
+        - time_range_seconds
       properties:
         count:
           type: integer
           format: int64
+          minimum: 0
         avg_cpu_percent:
           type: number
           format: float
+          minimum: 0.0
+          maximum: 100.0
         avg_memory_bytes:
           type: integer
           format: int64
+          minimum: 0
         avg_disk_io_ops:
           type: number
           format: float
+          minimum: 0.0
         time_range_seconds:
           type: integer
           format: int64
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type identifier
+        message:
+          type: string
+          description: Human-readable error message
