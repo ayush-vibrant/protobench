@@ -3,6 +3,18 @@ name = "benchmarks"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "benchmarks"
+path = "src/lib.rs"
+
+[[bin]]
+name = "benchmarks"
+path = "src/main.rs"
+
+[[bench]]
+name = "protocol_bench"
+harness = false
+
 [dependencies]
 # Workspace dependencies
 tokio = { workspace = true }
@@ -26,6 +38,15 @@ futures-util = "0.3"
 
 # Additional utilities
 rand = "0.8"
+
+# Performance measurement
+stats_alloc = "0.1"  # Memory allocation tracking
+pprof = { version = "0.11", features = ["criterion", "flamegraph"] }  # CPU profiling
+
+# Visualization and analysis
+plotters = "0.3"
+polars = { version = "0.33", features = ["lazy", "temporal", "strings"] }
+rayon = "1.8"
 
 # Local dependencies
 shared = { path = "../shared" }

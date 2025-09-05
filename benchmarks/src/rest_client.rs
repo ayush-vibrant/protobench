@@ -5,7 +5,12 @@ use std::sync::OnceLock;
 static CLIENT: OnceLock<Client> = OnceLock::new();
 
 fn get_client() -> &'static Client {
-    CLIENT.get_or_init(|| Client::new())
+    CLIENT.get_or_init(|| {
+        Client::builder()
+            .http2_prior_knowledge() // Use HTTP/2 for fair comparison with gRPC
+            .build()
+            .expect("Failed to create HTTP/2 client")
+    })
 }
 
 pub async fn submit_metric(metric: MetricPoint) -> anyhow::Result<()> {

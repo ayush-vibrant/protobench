@@ -1,5 +1,4 @@
 use shared::{MetricPoint as SharedMetricPoint, MetricQuery as SharedMetricQuery, MetricStatistics as SharedMetricStatistics};
-use std::collections::HashMap;
 use std::sync::OnceLock;
 use tonic::transport::Channel;
 
@@ -8,8 +7,8 @@ pub mod metrics {
 }
 
 use metrics::{
-    metrics_service_client::MetricsServiceClient, 
-    Empty, MetricPoint, MetricQuery, MetricStatistics
+    metrics_service_client::MetricsServiceClient,
+    MetricPoint, MetricQuery
 };
 
 static CLIENT: OnceLock<MetricsServiceClient<Channel>> = OnceLock::new();
