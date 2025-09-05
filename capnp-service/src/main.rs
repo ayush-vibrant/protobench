@@ -136,27 +136,40 @@ impl metrics_service::Server for MetricsServiceImpl {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "127.0.0.1:55555";
+    let addr = "127.0.0.1:55556";
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     println!("Cap'n Proto service listening on {}", addr);
 
     let storage = Arc::new(InMemoryStorage::new());
 
-    let (stream, _) = listener.accept().await?;
-    println!("Cap'n Proto client connected");
-    
-    let (reader, writer) = tokio_util::compat::TokioAsyncReadCompatExt::compat(stream).split();
-    let rpc_network = Box::new(twoparty::VatNetwork::new(
-        reader,
-        writer,
-        rpc_twoparty_capnp::Side::Server,
-        Default::default(),
-    ));
+    // Use LocalSet for concurrent connections since RpcSystem is !Send
+    tokio::task::LocalSet::new()
+        .run_until(async move {
+            loop {
+                let (stream, client_addr) = listener.accept().await?;
+                println!("Cap'n Proto client connected from {}", client_addr);
+                
+                let storage_clone = storage.clone();
+                
+                // Use spawn_local since RpcSystem doesn't implement Send
+                tokio::task::spawn_local(async move {
+                    let (reader, writer) = tokio_util::compat::TokioAsyncReadCompatExt::compat(stream).split();
+                    let rpc_network = Box::new(twoparty::VatNetwork::new(
+                        reader,
+                        writer,
+                        rpc_twoparty_capnp::Side::Server,
+                        Default::default(),
+                    ));
 
-    let service_impl = MetricsServiceImpl::new(storage);
-    let metrics_service: metrics_service::Client = capnp_rpc::new_client(service_impl);
-    let rpc_system = RpcSystem::new(rpc_network, Some(metrics_service.clone().client));
+                    let service_impl = MetricsServiceImpl::new(storage_clone);
+                    let metrics_service: metrics_service::Client = capnp_rpc::new_client(service_impl);
+                    let rpc_system = RpcSystem::new(rpc_network, Some(metrics_service.clone().client));
 
-    rpc_system.await?;
-    Ok(())
+                    if let Err(e) = rpc_system.await {
+                        eprintln!("RPC system error: {}", e);
+                    }
+                });
+            }
+        })
+        .await
 }
