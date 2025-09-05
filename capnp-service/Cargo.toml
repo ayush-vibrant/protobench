@@ -1,0 +1,22 @@
+[package]
+name = "capnp-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+serde = { workspace = true }
+anyhow = { workspace = true }
+capnp = { workspace = true }
+capnp-rpc = { workspace = true }
+
+# Additional dependencies for Cap'n Proto
+tokio-util = { version = "0.7", features = ["compat"] }
+futures-util = "0.3"
+
+# Local dependencies
+shared = { path = "../shared" }
+
+[build-dependencies]
+capnpc = { workspace = true }
