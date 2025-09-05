@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -37,7 +36,7 @@ pub trait MetricsService {
     async fn get_statistics(&self, query: MetricQuery) -> Result<MetricStatistics, Self::Error>;
 }
 
-// TODO(human): Implement the in-memory storage backend
+
 pub struct InMemoryStorage {
     metrics: Arc<RwLock<Vec<MetricPoint>>>,
 }
