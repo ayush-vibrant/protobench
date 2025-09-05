@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MetricPoint {
@@ -38,13 +39,64 @@ pub trait MetricsService {
 
 // TODO(human): Implement the in-memory storage backend
 pub struct InMemoryStorage {
-    // Storage implementation will go here
+    metrics: Arc<RwLock<Vec<MetricPoint>>>,
 }
 
 impl InMemoryStorage {
     pub fn new() -> Self {
         Self {
-            // Initialize storage
+            metrics: Arc::new(RwLock::new(Vec::new())),
         }
+    }
+    
+    pub fn store_metric(&self, metric: MetricPoint) -> Result<(), anyhow::Error> {
+        let mut metrics = self.metrics.write().map_err(|_| anyhow::anyhow!("Lock poisoned"))?;
+        metrics.push(metric);
+        Ok(())
+    }
+    
+    pub fn query_metrics(&self, query: &MetricQuery) -> Result<Vec<MetricPoint>, anyhow::Error> {
+        let metrics = self.metrics.read().map_err(|_| anyhow::anyhow!("Lock poisoned"))?;
+        
+        let filtered: Vec<MetricPoint> = metrics
+            .iter()
+            .filter(|metric| {
+                metric.timestamp >= query.start_time && metric.timestamp <= query.end_time
+            })
+            .filter(|metric| {
+                query.hostname_filter.as_ref()
+                    .map_or(true, |filter| &metric.hostname == filter)
+            })
+            .cloned()
+            .collect();
+            
+        Ok(filtered)
+    }
+    
+    pub fn calculate_statistics(&self, query: &MetricQuery) -> Result<MetricStatistics, anyhow::Error> {
+        let metrics = self.query_metrics(query)?;
+        
+        if metrics.is_empty() {
+            return Ok(MetricStatistics {
+                count: 0,
+                avg_cpu_percent: 0.0,
+                avg_memory_bytes: 0,
+                avg_disk_io_ops: 0.0,
+                time_range_seconds: query.end_time - query.start_time,
+            });
+        }
+        
+        let count = metrics.len() as u64;
+        let avg_cpu = metrics.iter().map(|m| m.cpu_percent).sum::<f32>() / count as f32;
+        let avg_memory = metrics.iter().map(|m| m.memory_bytes).sum::<u64>() / count;
+        let avg_disk_io = metrics.iter().map(|m| m.disk_io_ops as f32).sum::<f32>() / count as f32;
+        
+        Ok(MetricStatistics {
+            count,
+            avg_cpu_percent: avg_cpu,
+            avg_memory_bytes: avg_memory,
+            avg_disk_io_ops: avg_disk_io,
+            time_range_seconds: query.end_time - query.start_time,
+        })
     }
 }
