@@ -1,4 +1,7 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tonic_build::compile_protos("../schemas/metrics.proto")?;
+    tonic_build::configure()
+        .build_server(true)
+        .build_client(true)
+        .compile(&["../schemas/metrics.proto"], &["../schemas"])?;
     Ok(())
 }
