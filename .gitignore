@@ -50,3 +50,9 @@ flamegraph.svg
 # Documentation builds
 /docs/build/
 /docs/_build/
+
+# Plan files
+*.plan
+
+# Claude files
+*CLAUDE.md
