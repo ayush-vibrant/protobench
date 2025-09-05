@@ -8,7 +8,6 @@ use axum::{
 use serde::Deserialize;
 use shared::{InMemoryStorage, MetricPoint, MetricQuery, MetricStatistics};
 use std::sync::Arc;
-use tower::ServiceBuilder;
 
 #[derive(Debug, Deserialize)]
 struct QueryParams {
@@ -17,6 +16,9 @@ struct QueryParams {
     hostname_filter: Option<String>,
 }
 
+// Application dependency container - equivalent to Spring's @Autowired beans.
+// Axum injects this into handlers via State(state) extractor, enabling shared
+// access to storage across concurrent requests without cloning the backend.
 struct AppState {
     storage: Arc<InMemoryStorage>,
 }
@@ -29,7 +31,6 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/metrics", post(submit_metric).get(query_metrics))
         .route("/statistics", get(get_statistics))
-        .layer(ServiceBuilder::new())
         .with_state(app_state);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
